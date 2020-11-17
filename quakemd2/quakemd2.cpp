@@ -415,7 +415,7 @@ static bool Model_MD2_OptHandlerA(const char *arg, unsigned char *store, int sto
 //called by Noesis to init the plugin
 bool NPAPI_InitLocal(void)
 {
-	g_fmtHandle = g_nfn->NPAPI_Register("Quake II MD2", ".md2");
+	g_fmtHandle = g_nfn->NPAPI_Register("Kingpin MD2", ".md2");
 	if (g_fmtHandle < 0)
 	{
 		return false;
@@ -432,7 +432,7 @@ bool NPAPI_InitLocal(void)
 	addOptParms_t optParms;
 	memset(&optParms, 0, sizeof(optParms));
 	optParms.optName = "-md2player"; 
-	optParms.optDescr = "Export MD2 into 3 parts. Mesh names _head_ and _body_ should exist";
+	optParms.optDescr = "Export MD2 into 3 parts. Mesh names head, body and legs should exist";
 	optParms.storeSize = sizeof(md2Opts_t);
 	optParms.handler = Model_MD2_OptHandlerA;
 	g_opts = (md2Opts_t *)g_nfn->NPAPI_AddTypeOption(g_fmtHandle, &optParms);

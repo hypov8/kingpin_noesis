@@ -461,30 +461,58 @@ stop joining all images into 1 page
 leave uv untouched
 ////////////////////
 */
-void Model_MDX_CreateSkinLists(sharedModel_t *pmdl, int &skinWidth,	int &skinHeight, int & skinCount, noeRAPI_t *rapi, int objectID, mdxSkin_t *skins)
+void Model_MDX_CreateSkinLists(sharedModel_t *pmdl, int &skinWidth,	int &skinHeight, int & skinCount, noeRAPI_t *rapi, int objectID, mdxSkin_t *skins, BYTE *meshElementsIdxType)
 {
 	//set default skin size
 	skinWidth = 128;
 	skinHeight = 128;
 
 	//3 part player model
-	if (g_opts->exportPlayerModel && (objectID == MDX_PLAYER_HEAD|| objectID == MDX_PLAYER_BODY||objectID == MDX_PLAYER_HEAD))
+	if (g_opts->exportPlayerModel  )
 	{
-		char *filename = (char*)rapi->Noesis_UnpooledAlloc(MAX_NOESIS_PATH);
-		rapi->Noesis_GetDirForFilePath(filename, rapi->Noesis_GetOutputName());
+		char *skinTmp = (char*)rapi->Noesis_UnpooledAlloc(MAX_NOESIS_PATH);
 
+		if (objectID == MDX_PLAYER_HEAD || objectID == MDX_PLAYER_BODY || objectID == MDX_PLAYER_LEGS)
+		{
+			rapi->Noesis_GetDirForFilePath(skinTmp, rapi->Noesis_GetOutputName());
 		if (objectID == MDX_PLAYER_HEAD)
-			strcat_s(filename, MAX_NOESIS_PATH, "head_001.tga");
+				strcat_s(skinTmp, MAX_NOESIS_PATH, "head_001.tga");
 		else if (objectID == MDX_PLAYER_BODY)
-			strcat_s(filename, MAX_NOESIS_PATH, "body_001.tga");
+				strcat_s(skinTmp, MAX_NOESIS_PATH, "body_001.tga");
 		else
-			strcat_s(filename, MAX_NOESIS_PATH, "legs_001.tga");
+				strcat_s(skinTmp, MAX_NOESIS_PATH, "legs_001.tga");
 
 		//get texture size
-		Model_MDX_LoadExternalImageSize(rapi, skinWidth, skinHeight, filename);
-		Model_MDX_BakeSkinName(rapi, filename, skins->name); //#1
+			Model_MDX_LoadExternalImageSize(rapi, skinWidth, skinHeight, skinTmp);
+			Model_MDX_BakeSkinName(rapi, skinTmp, skins->name); //#1
+		}
+		else 
+		{
+			int meshID = 0;
+			for (int i = 0; i < pmdl->numMeshes; i++)
+			{
+				if (meshElementsIdxType[i] == (BYTE)objectID)
+				{
+					meshID = i;
+					break; //weapons should only be 1 mesh
+				}
+			}
 
-		rapi->Noesis_UnpooledFree(filename);
+			sharedMesh_t *mesh = pmdl->meshes + meshID;
+			if (mesh->skinName[0]) //mesh->materialIdx >-1
+			{
+				int foundTextureSize = 0;
+				Model_MDX_FindMateral(pmdl, rapi,skinWidth, skinHeight, skinCount, skins, skinTmp, 0/*skinCounter*/, mesh, foundTextureSize);		
+			}
+			else //use model path. no skin assigned to mesh
+			{
+				strcpy_s(skinTmp, MAX_NOESIS_PATH, rapi->Noesis_GetOutputName());
+				Model_MDX_BakeSkinName(rapi, skinTmp, skins->name);//use "model_path/model_name.tga"
+			}
+		}
+
+		rapi->Noesis_UnpooledFree(skinTmp);
+
 	}
 	else //1 complete model. embed all images into file if not ppm weapon.
 	{			
@@ -497,9 +525,6 @@ void Model_MDX_CreateSkinLists(sharedModel_t *pmdl, int &skinWidth,	int &skinHei
 		//assign materals to mesh
 		for (int i = 0; i < pmdl->numMeshes; i++)
 		{
-			if (g_opts->exportPlayerModel && skinCounter == 1)
-				break; //only add 1 gun skin
-
 			foundMatch = 0;
 			sharedMesh_t *mesh = pmdl->meshes + i;
 			if (mesh->skinName[0])
@@ -531,7 +556,7 @@ void Model_MDX_CreateSkinLists(sharedModel_t *pmdl, int &skinWidth,	int &skinHei
 		}
 
 		//append any materals in file but not assigned to a mesh
-		if (!g_opts->exportPlayerModel&&pmdl->matData&&pmdl->matData->numMaterials)
+		if (pmdl->matData&&pmdl->matData->numMaterials) //!g_opts->exportPlayerModel&&
 		{
 			for (int i = 0; i < pmdl->matData->numMaterials; i++)
 			{
@@ -721,7 +746,7 @@ void Model_MDX_SetupMeshElemets(sharedModel_t *pmdl, int *meshElementsOffs, int 
 		else if (!_strnicmp(mesh->name,"w_bazooka", sizeof("w_bazooka")-1)){
 			SetPPM_Elements(meshElementsOffs[i], vertCountOfs, meshElementsCountVert[MDX_PLAYER_RL], meshElementsCountTri[MDX_PLAYER_RL], meshElementsIdxType[i], MDX_PLAYER_RL, mesh->numVerts, mesh->numTris);
 		}
-		else if (!_strnicmp(mesh->name,"w_flamethrower", sizeof("w_flamethrower")-1)){
+		else if (!_strnicmp(mesh->name,"w_flame", sizeof("w_flame")-1)){
 			SetPPM_Elements(meshElementsOffs[i], vertCountOfs, meshElementsCountVert[MDX_PLAYER_FL], meshElementsCountTri[MDX_PLAYER_FL], meshElementsIdxType[i], MDX_PLAYER_FL, mesh->numVerts, mesh->numTris);
 		}
 		else if (!_strnicmp(mesh->name,"w_grenade", sizeof("w_grenade")-1)){
@@ -736,10 +761,10 @@ void Model_MDX_SetupMeshElemets(sharedModel_t *pmdl, int *meshElementsOffs, int 
 		else if (!_strnicmp(mesh->name,"w_pistol", sizeof("w_pistol")-1)){
 			SetPPM_Elements(meshElementsOffs[i], vertCountOfs, meshElementsCountVert[MDX_PLAYER_PISTOL], meshElementsCountTri[MDX_PLAYER_PISTOL], meshElementsIdxType[i], MDX_PLAYER_PISTOL, mesh->numVerts, mesh->numTris);
 		}
-		else if (!_strnicmp(mesh->name,"w_shotgun", sizeof("w_shotgun")-1)){
+		else if (!_strnicmp(mesh->name,"w_shot", sizeof("w_shot")-1)){
 			SetPPM_Elements(meshElementsOffs[i], vertCountOfs, meshElementsCountVert[MDX_PLAYER_SG], meshElementsCountTri[MDX_PLAYER_SG], meshElementsIdxType[i], MDX_PLAYER_SG, mesh->numVerts, mesh->numTris);
 		}
-		else if (!_strnicmp(mesh->name,"w_tommygun", sizeof("w_tommygun")-1)){
+		else if (!_strnicmp(mesh->name,"w_tom", sizeof("w_tom")-1)){
 			SetPPM_Elements(meshElementsOffs[i], vertCountOfs, meshElementsCountVert[MDX_PLAYER_TG], meshElementsCountTri[MDX_PLAYER_TG], meshElementsIdxType[i], MDX_PLAYER_TG, mesh->numVerts, mesh->numTris);
 		}
 		else // no match. diacard //-mdxplayer
@@ -775,6 +800,7 @@ bool Model_MDX_Write(noesisModel_t *mdl, RichBitStream *outStream, noeRAPI_t *ra
 		return false;
 	}
 
+	rapi->LogOutput("\nStarting Kingpin Model Exporter\n");
 
 	// build mesh groups (head/body/legs) MDX_PLAYER_MODEL
 	// offset index numbers to vertex. compensate for ommited mesh
@@ -957,6 +983,10 @@ bool Model_MDX_Write(noesisModel_t *mdl, RichBitStream *outStream, noeRAPI_t *ra
 		hdr.numTris = numAbsTris;
 		hdr.numFrames = mdlFrames;
 
+		hdr.num_SfxDefines = 0;
+		hdr.num_SfxEntries = 0;
+		hdr.num_SubObjects = 1; //todo: split multi part into objects?
+
 
 		// Build float UV array
 		modelTexCoord_t *fuvs = (modelTexCoord_t *)rapi->Noesis_UnpooledAlloc(sizeof(modelTexCoord_t)*pmdl->numAbsVerts);
@@ -967,7 +997,7 @@ bool Model_MDX_Write(noesisModel_t *mdl, RichBitStream *outStream, noeRAPI_t *ra
 		rapi->LogOutput("Building Texture lists...\n");
 		mdxSkin_t *skins= (mdxSkin_t *)rapi->Noesis_UnpooledAlloc(sizeof(mdxSkin_t)*32); //max 32 skins
 		memset(skins, 0, sizeof(sizeof(mdxSkin_t)*32));
-		Model_MDX_CreateSkinLists(pmdl, hdr.skinWidth, hdr.skinHeight, hdr.numSkins, rapi, objectID, skins);
+		Model_MDX_CreateSkinLists(pmdl, hdr.skinWidth, hdr.skinHeight, hdr.numSkins, rapi, objectID, skins, meshElementsIdxType);
 
 
 
@@ -1009,7 +1039,7 @@ bool Model_MDX_Write(noesisModel_t *mdl, RichBitStream *outStream, noeRAPI_t *ra
 
 			rapi->Noesis_WriteFile(filename, FileBuff.GetBuffer(), hdr.ofsEnd);
 
-			rapi->LogOutput("Write mdx Player file: \"%s\"\n", filename);
+			rapi->LogOutput("Write mdx Player file:\n  \"%s\"\n", filename);
 			rapi->Noesis_UnpooledFree(filename);
 		}
 		else

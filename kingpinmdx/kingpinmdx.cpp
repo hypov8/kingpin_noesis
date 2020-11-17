@@ -16,13 +16,18 @@
 //  exporter implimented
 //v1.03
 //  added player model suport. export all 3 body parts. enable using -mdxplayer
-//  any mesh name that contains "_head_" will become head.mdx
-//  any mesh name that contains "_body_" will become body.mdx
-//  all other mesh names will become legs.mdx
+//  any mesh name starting with "head" will become head.mdx
+//  any mesh name starting with "body" will become body.mdx
+//  any mesh name starting with "legs" will become legs.mdx
+//  weapons suported to.  "w_bazooka",  "w_flame",  "w_grenade",  "w_heavy",  "w_pipe",  "w_pistol",  "w_shot",  "w_tom"
 //  export model search paths for textures updated. includes looking at diffuse image if it exists(fbx)
 //  import model search paths look for kingpin dir. fix for missing textures that reside in main\
 //  import model now allocates all images. even if not used on mesh (md2/mdx can only display 1 texture but can switch between 32)
 //  better implimentation of memory use
+//  fixed missing object number
+
+
+//todo: clean up duplicate code. create shared def between md2/mdx
 
 
 #include "stdafx.h"
@@ -422,7 +427,7 @@ bool NPAPI_InitLocal(void)
 	addOptParms_t optParms;
 	memset(&optParms, 0, sizeof(optParms));
 	optParms.optName = "-mdxplayer"; 
-	optParms.optDescr = "Export MDX into 3 parts. Mesh names _head_ and _body_ should exist";
+	optParms.optDescr = "Export MDX into 3 parts. Mesh names head, body and legs should exist";
 	optParms.storeSize = sizeof(mdxOpts_t);
 	optParms.handler = Model_MDX_OptHandlerA;
 	g_opts = (mdxOpts_t *)g_nfn->NPAPI_AddTypeOption(g_fmtHandle, &optParms);

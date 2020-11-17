@@ -47,7 +47,7 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>C:\Programs\Game\-==modeling==--\noesisv40963\plugins</OutDir>
+    <OutDir>C:\Programs\Game\-==modeling==--\noesisv40963\plugins\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>

@@ -3,6 +3,7 @@ kingpin model importer/exporter for noesis
 based of the offical md2 SDK.
 extended texture search paths. including main\ (when working in mod folders)
 -mdxplayer and -md2export switch added to fix player model seams issues
+use when model program does not support md2/mdx export
 
 
 notes: player model exporter option prevents seams between each body part by using a common grid.
@@ -19,13 +20,13 @@ mesh name can contain any subsequent characters after these defined names below.
   body
   legs
   w_bazooka
-  w_flamethrower
+  w_flame
   w_grenade
   w_heavy
   w_pipe
   w_pistol
-  w_shotgun
-  w_tommygun
+  w_shot
+  w_tom
 
 export model into main/players/male_xx
 make sure head_001.tga, body_001.tga and legs_001.tga are in this folder
@@ -48,9 +49,11 @@ export will try to look for diffuse images(fbx) to get correct directory for exp
 all image files found will be inserted into model. max of 32 alowed (only 1 used for player models)
   models can only render 1 texture at a time but code\mods can choose what texture index to render
 
-import model now allocates all images. even if not used on mesh (md2/mdx can only display 1 texture but can switch between 32)
+import model now allocates all images refrenced in model. to assist export.
 
 better implementation of memory use
+
+fixed missing object number
 
 
 version 1.02
